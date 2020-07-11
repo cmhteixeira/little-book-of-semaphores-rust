@@ -3,12 +3,28 @@ use std::thread;
 use std::sync::Arc;
 use std::time::Duration;
 use little_book_semaphores_rust::rendezvous::*;
+use little_book_semaphores_rust::mutex::{monkey, MyCustomMutex};
+use std::ops::Deref;
 
 fn main() {
-   let Output{thread_handles, output} = rendezvous();
+   let counter = MyCustomMutex::new(vec![]);
+   let arc_counter = Arc::new(counter);
 
-   thread_handles.1.join().expect("Error joining thread ...");
-   thread_handles.0.join().expect("Error joining thread ...");
+   let res = monkey(10, arc_counter.clone());
 
-   println!("{:?}", output.lock().expect("Error obtaining lock ...").to_vec());
+   for handle in res {
+      handle.join().expect("asdsad");
+   }
+
+   println!("{:?}", arc_counter.deref().lock());
+   arc_counter.deref().unlock();
+   let res: (u128, bool) = arc_counter.deref().lock().iter().fold((0, true), |(a, b), t|{
+      if b {
+         (t.clone(), t.clone()  == a + 1)
+      } else {
+         (a, b)
+      }
+   });
+
+   println!("{:?}", res)
 }
