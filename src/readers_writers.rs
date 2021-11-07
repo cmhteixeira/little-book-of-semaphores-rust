@@ -52,15 +52,15 @@ impl<T: Debug> ReadersWritersLock<T> {
         result
     }
 
-    pub fn write<F>(&self, new_shared_reference: &mut T, mut write_op: F) -> () where F: FnMut(&T) -> T {
+    pub fn write<F>(&self, mut write_op: F) -> () where F: FnMut(&T) -> T {
         self.writers_s.decrement();
 
         // Writers critical section
         unsafe {
             let current_value = self.elem.load(Ordering::SeqCst);
             let mut new_value = write_op(&*current_value);
-            *new_shared_reference = new_value;
-            self.elem.store(new_shared_reference, Ordering::SeqCst);
+            *current_value = new_value;
+            self.elem.store(current_value, Ordering::SeqCst);
         }
         // Writers critical section
 
