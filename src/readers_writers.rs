@@ -6,21 +6,16 @@ use std::fmt::{Display, Debug};
 use rand::Rng;
 
 pub struct ReadersWritersLock<T: Debug> {
-    value: T,
-    elem: AtomicPtr<T>,
+    elem: UnsafeCell<T>,
     readers_counter: atomic::AtomicU64,
     readers_s: Semaphore,
     writers_s: Semaphore,
 }
 
 impl<T: Debug> ReadersWritersLock<T> {
-    pub fn new(mut t: T) -> ReadersWritersLock<T> {
-        // let mut foo = t;
-        // let pointer = AtomicPtr::new(&mut t);
-
+    pub fn new(t: T) -> ReadersWritersLock<T> {
         ReadersWritersLock {
-            elem: AtomicPtr::new(&mut t),
-            value: t,
+            elem: UnsafeCell::new(t),
             readers_counter: AtomicU64::new(0),
             readers_s: Semaphore::new(1),
             writers_s: Semaphore::new(1),
@@ -42,8 +37,7 @@ impl<T: Debug> ReadersWritersLock<T> {
         // Read critical section - Begin
         let result;
         unsafe {
-            println!("Read..");
-            let current_value = self.elem.load(Ordering::SeqCst);
+            let current_value = AtomicPtr::new(self.elem.get()).load(Ordering::SeqCst);
             result = read_op(&*current_value);
         }
         // Read critical section - End
@@ -63,31 +57,23 @@ impl<T: Debug> ReadersWritersLock<T> {
 
         // Writers critical section
         unsafe {
-            let current_value = self.elem.load(Ordering::SeqCst);
+            let atomic_pointer = AtomicPtr::new(self.elem.get());
+            let current_value = atomic_pointer.load(Ordering::SeqCst);
             let mut new_value = write_op(&*current_value);
             *current_value = new_value;
-            self.elem.store(current_value, Ordering::SeqCst);
+            atomic_pointer.store(current_value, Ordering::SeqCst);
         }
         // Writers critical section
 
-        println!("this is");
-        println!("This is the element {:?}", self.value);
         self.writers_s.increment();
     }
 }
 
 
 impl<T: Debug> Drop for ReadersWritersLock<T> {
-   fn drop(&mut self) {
-       println!("Dropping ...");
-       // std::thread::sleep(std::time::Duration::from_millis(2000));
-       println!("Dropping2 ...");
-       println!("The readers counter is: {:?}", self.readers_counter.load(Ordering::SeqCst));
-       unsafe {
-           println!("The pointer is: {:?}", *self.elem.load(Ordering::SeqCst));
-       }
-       // println!("The value is: {:?}", self.value);
-       println!("Dropping3 ...");
-       println!("The reference is: {:?}", self.elem.load(Ordering::SeqCst));
+    fn drop(&mut self) {
+        println!("Dropping ...");
     }
 }
+
+unsafe impl<T: Debug> Sync for ReadersWritersLock<T>{}
