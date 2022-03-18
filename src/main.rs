@@ -4,65 +4,64 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicPtr, Ordering};
 use std::thread;
 use std::thread::JoinHandle;
-use std::time::Duration;
-
+use std::time::{Duration, SystemTime};
+use std::time;
 use rand::Rng;
 
 use little_book_semaphores_rust::readers_writers::ReadersWritersLock;
+use little_book_semaphores_rust::semaphore_fixed::{Semaphore as SemaphoreFixed};
+use little_book_semaphores_rust::Semaphore;
 
 fn main() {
-    fn kaboom() -> Vec<JoinHandle<()>> {
-        let mut my_initial = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        let rw_lock = ReadersWritersLock::new(my_initial);
-        let rw_lock = Arc::new(rw_lock);
+    let s = Arc::new(SemaphoreFixed::new(2));
+    let s1 = Arc::clone(&s);
+    let s2 = Arc::clone(&s);
+    let s3 = Arc::clone(&s);
 
-        let mut threads = vec![];
-        for i in 1..5 {
-            let rw_lock = rw_lock.clone();
-            let thread_handle = thread::Builder::new().name(String::from(format!("WriterThread:{}/100", i)))
-                .spawn(move || unsafe {
-                    // let mut current_value: Vec<String> = vec![];
-                    let mut iter = 0;
-                    loop {
-                        iter += 1;
-                        println!("I am writer thread {}, outside", i);
-                        thread::sleep(Duration::from_millis(100));
-                        rw_lock.write(|a| {
-                            println!("I am writer thread {}, currently on the critical section", i);
-                            let num = rand::thread_rng().gen_range(20..30);
-                            thread::sleep(Duration::from_millis(num * 10));
-                            let new_value = a.into_iter().map(|k| format!("{}-{}", k, i)).collect();
-                            new_value
-                        });
-                        if iter == 20 { break; }
-                    }
-                }).expect("Can't create thread ...");
-            threads.push(thread_handle);
-        }
 
-        for i in 1..4 {
-            let rw_lock = rw_lock.clone();
-            let thread_handle = thread::Builder::new().name(String::from(format!("ReaderThread:{}/100", i)))
-                .spawn(move || {
-                    let mut iter = 0;
-                    loop {
-                        iter += 1;
-                        let res = rw_lock.read(|protected_resource| {
-                            let num = rand::thread_rng().gen_range(1..5);
-                            thread::sleep(Duration::from_millis(num * 10));
-                            protected_resource.clone()
-                        });
-                        println!("I am reader thread {}, currently on the critical section. The content is: {} ", i, res.join(" # "));
-                        if iter == 20 { break; }
-                    }
-                }).expect("Can't create thread ...");
-            threads.push(thread_handle);
-        }
-        threads
-    }
+    let r = thread::Builder::new().name(String::from("Thread-1"))
+        .spawn(move || unsafe {
+            s1.decrement();
+            let being = SystemTime::now();
+            loop {
+                let time = being.elapsed().unwrap().as_secs();
+                thread::sleep(Duration::from_millis(500));
+                if (time % 5) == 0 {
+                    println!("Printing from thread-1")
+                }
+            }
+        }).unwrap();
 
-    let threads = kaboom();
-    for i in threads {
-        i.join();
-    }
+    let t = thread::Builder::new().name(String::from("Thread-2"))
+        .spawn(move || unsafe {
+            s2.decrement();
+            let being = SystemTime::now();
+            let mut time = being.elapsed().unwrap().as_secs();
+            while (time == 0 || time % 15 != 0 ) {
+                thread::sleep(Duration::from_millis(500));
+                if (time % 5) == 0 {
+                    println!("Printing from thread-2")
+                }
+                time = being.elapsed().unwrap().as_secs();
+                // println!("{}", time)
+            }
+            println!("Leaving thread-2");
+            s2.increment()
+        }).unwrap();
+
+    let z = thread::Builder::new().name(String::from("Thread-3"))
+        .spawn(move || unsafe {
+            s3.decrement();
+            let being = SystemTime::now();
+            loop {
+                let time = being.elapsed().unwrap().as_secs();
+                thread::sleep(Duration::from_millis(500));
+                if (time % 5) == 0 {
+                    println!("Printing from thread-3")
+                }
+            }
+        }).unwrap();
+
+
+    r.join();
 }
