@@ -8,5 +8,6 @@ pub mod dining_savages;
 pub mod producer_consumer;
 pub mod readers_writers;
 pub mod semaphore_fixed;
+pub mod semaphore_fixed_2;
 
 pub use semaphore::Semaphore as Semaphore;

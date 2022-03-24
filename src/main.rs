@@ -9,11 +9,12 @@ use std::time;
 use rand::Rng;
 
 use little_book_semaphores_rust::readers_writers::ReadersWritersLock;
+use little_book_semaphores_rust::semaphore_fixed_2::{Semaphore as SemaphoreFixed2};
 use little_book_semaphores_rust::semaphore_fixed::{Semaphore as SemaphoreFixed};
 use little_book_semaphores_rust::Semaphore;
 
 fn main() {
-    let s = Arc::new(SemaphoreFixed::new(2));
+    let s = Arc::new(SemaphoreFixed2::new(2));
     let s1 = Arc::clone(&s);
     let s2 = Arc::clone(&s);
     let s3 = Arc::clone(&s);
