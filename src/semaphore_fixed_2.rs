@@ -3,8 +3,8 @@ use std::ops::{Deref, DerefMut};
 use std::thread::sleep;
 
 pub struct Semaphore {
-    size: u8,
-    mutex: Mutex<(i8, u8)>, // first element is counter, second is passes
+    size: u16,
+    mutex: Mutex<(i16, u16)>, // first element is counter, second is passes
     cond_var: Condvar,
 }
 
@@ -22,13 +22,13 @@ pub struct Semaphore {
 //
 
 impl Semaphore {
-    pub fn new(size: u8) -> Semaphore {
+    pub fn new(size: u16) -> Semaphore {
         if size == 0 {
             panic!("Semaphore size must be greater than 0.")
         }
         Semaphore {
             size,
-            mutex: Mutex::new((size as i8, 0)),
+            mutex: Mutex::new((size as i16, 0)),
             cond_var: Condvar::new(),
         }
     }
@@ -55,7 +55,7 @@ impl Semaphore {
             *counter += 1;
             *passes += 1;
             self.cond_var.notify_one();
-        } else if *counter == self.size as i8 {
+        } else if *counter == self.size as i16 {
             // do nothing
         } else {
             *counter += 1;
