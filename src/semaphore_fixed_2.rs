@@ -9,21 +9,7 @@ pub struct Semaphore {
 }
 
 
-/// This implementation is a problem that would manifest itself on a "well" timed spurious wake
-/// Imagine a semaphore of size 3, at some moment in time with 3 threads in, and 2 waiting
-///
-/// Initial                  X,X|X,X,X : counter=-2,passes=0
-/// One thread leaves        X,X|O,X,X : counter=-1,passes=1
-/// Another leaves           X,X|O,O,X : counter=0,passes=2
-/// Last leaves              X,X|O,O,O : counter=1,passes=3
-/// A NEW thread enters      X,X|O,O,X : counter=0,passes=3
-/// WAITING thread enters    O,X|O,X,X : counter=0,passes=2
-/// Last WAITING enters      O,O|X,X,X : counter=0,passes=1
-/// A NEW thread arrives     O,X|X,X,X : counter=-1,passes=1
-/// Spurious Wake of above   O|X,X,X,X KABOOOOOOOM 4 Threads are inside!!!
-///
-///
-/// Another thing that happen, although that does not seem to be a problem is a permit being
+/// A thing that happen, although that does not seem to be a problem is a permit being
 /// stolen by a new thread. That is, there are threads waiting, when a spot appears on the semaphore
 /// because of a thread leaving. You might think that some of the CURRENTLY waiting threads will
 /// enter the semaphore; not necessarily. A new thread, not currently waiting, might win contention
