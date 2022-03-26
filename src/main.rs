@@ -21,7 +21,7 @@ fn main() {
 
 
     let r = thread::Builder::new().name(String::from("Thread-1"))
-        .spawn(move || unsafe {
+        .spawn(move || {
             s1.decrement();
             let being = SystemTime::now();
             loop {
@@ -34,7 +34,7 @@ fn main() {
         }).unwrap();
 
     let t = thread::Builder::new().name(String::from("Thread-2"))
-        .spawn(move || unsafe {
+        .spawn(move || {
             s2.decrement();
             let being = SystemTime::now();
             let mut time = being.elapsed().unwrap().as_secs();
@@ -51,7 +51,7 @@ fn main() {
         }).unwrap();
 
     let z = thread::Builder::new().name(String::from("Thread-3"))
-        .spawn(move || unsafe {
+        .spawn(move || {
             s3.decrement();
             let being = SystemTime::now();
             loop {

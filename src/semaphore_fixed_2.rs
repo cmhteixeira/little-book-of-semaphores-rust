@@ -1,10 +1,44 @@
 use std::sync::{Mutex, Condvar};
 use std::ops::{Deref, DerefMut};
-use std::thread::sleep;
+
+/// State protected by the mutex that controls the behaviour of the semaphore.
+///
+/// 
+///
+/// ## Parameters
+///
+/// `passes`: One pass represents a sort of permit to enter the semaphore. It is not possible
+///  for this parameter to be negative (i.e., < 0).
+///
+/// `counter`: Represents the number of available spots in the Semaphore. It takes into account
+/// the number of passes "not redeemed".
+/// If `counter` is greater than 0, then it represents how many threads would be able to enter
+/// the semaphore without blocking. Additional threads might also be able to enter, depending on
+/// the value of `passes`.
+/// A `counter` of 0 means any new thread will block when trying to enter, and no threads are
+/// waiting to enter *without* a pass. But there might be threads waiting to enter with `passes`.
+/// If `counter` is lower than 0, then it represents how many threads are already blocked waiting
+/// to enter. There might also be additional threads blocked waiting to enter, which are represented
+/// by a positive value of `passes`.
+///
+///
+struct State {
+    counter: i16,
+    passes: u16,
+}
+
+impl State {
+    fn new(counter: i16, passes: u16) -> State {
+        State {
+            counter,
+            passes,
+        }
+    }
+}
 
 pub struct Semaphore {
     size: u16,
-    mutex: Mutex<(i16, u16)>, // first element is counter, second is passes
+    mutex: Mutex<State>,
     cond_var: Condvar,
 }
 
@@ -19,8 +53,6 @@ pub struct Semaphore {
 /// One thread leaves        X,X|O,X,X : counter=-1,passes=1
 /// A NEW thread enters      X,X|X,X,X : counter=-2,passes=0
 ///
-//
-
 impl Semaphore {
     pub fn new(size: u16) -> Semaphore {
         if size == 0 {
@@ -28,28 +60,28 @@ impl Semaphore {
         }
         Semaphore {
             size,
-            mutex: Mutex::new((size as i16, 0)),
+            mutex: Mutex::new(State::new(size as i16, 0)),
             cond_var: Condvar::new(),
         }
     }
 
     pub fn decrement(&self) {
         let mut mutex_guard = self.mutex.lock().unwrap();
-        let (counter, _) = mutex_guard.deref_mut();
+        let State { counter, .. } = mutex_guard.deref_mut();
         *counter -= 1;
 
         if *counter < 0 {
-            while (*mutex_guard.deref()).1 == 0 {
+            while (*mutex_guard.deref()).passes == 0 {
                 mutex_guard = self.cond_var.wait(mutex_guard).unwrap();
             }
-            let (_, passes) = mutex_guard.deref_mut();
+            let State { passes, .. } = mutex_guard.deref_mut();
             *passes -= 1;
         }
     }
 
     pub fn increment(&self) {
         let mut mutex_guard = self.mutex.lock().unwrap();
-        let (counter, passes) = mutex_guard.deref_mut();
+        let State { counter, passes } = mutex_guard.deref_mut();
 
         if *counter < 0 {
             *counter += 1;
