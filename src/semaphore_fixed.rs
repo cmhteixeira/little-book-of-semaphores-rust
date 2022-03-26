@@ -1,6 +1,19 @@
 use std::sync::{Mutex, Condvar};
 use std::ops::{Deref, DerefMut};
 
+/// This implementation is strikingly incorrect.
+///
+/// Imagine the following scenario:
+///
+/// 1. Initial                  X,X|X,X,X : counter=-2
+/// 2. One thread leaves        X,X|O,X,X : counter=-1
+/// 3. Because counter is negative, when woken up, the waiting threads will go back to waiting
+/// state right after, because of the while condition trying to account for spurious wakes.
+///
+/// This would be fixed if we removed the while guard, but then we would be exposed to
+/// spurious wakes.
+///
+///
 pub struct Semaphore {
     size: u8,
     mutex_counter: Mutex<i8>,
