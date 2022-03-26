@@ -21,50 +21,27 @@ fn main() {
     let s3 = Arc::clone(&s);
     // s3.increment();
 
-
-    let r = thread::Builder::new().name(String::from("Thread-1"))
-        .spawn(move || {
-            s1.decrement();
-            let being = SystemTime::now();
-            loop {
-                let time = being.elapsed().unwrap().as_secs();
-                thread::sleep(Duration::from_millis(500));
-                if (time % 5) == 0 {
-                    println!("Printing from thread-1")
+    fn new_thread(s1: Arc<SemaphoreFixed2>, name: String, ttl_seconds: u64) -> JoinHandle<()> {
+        thread::Builder::new().name(name.clone())
+            .spawn(move || {
+                s1.decrement();
+                let begin = SystemTime::now();
+                let mut elapsed = begin.elapsed().unwrap().as_secs();
+                while elapsed < ttl_seconds {
+                    thread::sleep(Duration::from_millis(500));
+                    if (elapsed % 5) == 0 {
+                        println!("Printing from '{}'", name)
+                    }
+                    elapsed = begin.elapsed().unwrap().as_secs();
                 }
-            }
-        }).unwrap();
+                s1.increment();
+                println!("Leaving thread '{}'", name)
+            }).unwrap()
+    }
 
-    let t = thread::Builder::new().name(String::from("Thread-2"))
-        .spawn(move || {
-            s2.decrement();
-            let being = SystemTime::now();
-            let mut time = being.elapsed().unwrap().as_secs();
-            while (time == 0 || time % 15 != 0 ) {
-                thread::sleep(Duration::from_millis(500));
-                if (time % 5) == 0 {
-                    println!("Printing from thread-2")
-                }
-                time = being.elapsed().unwrap().as_secs();
-                // println!("{}", time)
-            }
-            println!("Leaving thread-2");
-            s2.increment()
-        }).unwrap();
+    let one = new_thread(s1, String::from("1"), 60);
+    let _ = new_thread(s2, String::from("2"), 10);
+    let _ = new_thread(s3, String::from("3"), 60);
 
-    let z = thread::Builder::new().name(String::from("Thread-3"))
-        .spawn(move || {
-            s3.decrement();
-            let being = SystemTime::now();
-            loop {
-                let time = being.elapsed().unwrap().as_secs();
-                thread::sleep(Duration::from_millis(500));
-                if (time % 5) == 0 {
-                    println!("Printing from thread-3")
-                }
-            }
-        }).unwrap();
-
-
-    r.join();
+    one.join();
 }
