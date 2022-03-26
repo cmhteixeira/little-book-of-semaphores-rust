@@ -1,7 +1,7 @@
 use std::cell::RefMut;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime};
@@ -9,15 +9,17 @@ use std::time;
 use rand::Rng;
 
 use little_book_semaphores_rust::readers_writers::ReadersWritersLock;
+use little_book_semaphores_rust::semaphore_fixed_3::{Semaphore as SemaphoreFixed3};
 use little_book_semaphores_rust::semaphore_fixed_2::{Semaphore as SemaphoreFixed2};
 use little_book_semaphores_rust::semaphore_fixed::{Semaphore as SemaphoreFixed};
 use little_book_semaphores_rust::Semaphore;
 
 fn main() {
-    let s = Arc::new(SemaphoreFixed2::new(2));
+    let s = Arc::new(SemaphoreFixed3::new(2));
     let s1 = Arc::clone(&s);
     let s2 = Arc::clone(&s);
     let s3 = Arc::clone(&s);
+    // s3.increment();
 
 
     let r = thread::Builder::new().name(String::from("Thread-1"))
