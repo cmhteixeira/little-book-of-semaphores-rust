@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 
 /// State protected by the mutex that controls the behaviour of the semaphore.
 ///
-/// 
+///
 ///
 /// ## Parameters
 ///
@@ -92,14 +92,6 @@ impl Semaphore {
         } else {
             *counter += 1;
         }
-    }
-
-    pub fn wait(&self) {
-        self.decrement()
-    }
-
-    pub fn signal(&self) {
-        self.increment()
     }
 }
 
