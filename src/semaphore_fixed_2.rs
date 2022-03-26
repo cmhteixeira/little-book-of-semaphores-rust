@@ -37,7 +37,6 @@ impl State {
 }
 
 pub struct Semaphore {
-    size: u16,
     mutex: Mutex<State>,
     cond_var: Condvar,
 }
@@ -59,7 +58,6 @@ impl Semaphore {
             panic!("Semaphore size must be greater than 0.")
         }
         Semaphore {
-            size,
             mutex: Mutex::new(State::new(size as i16, 0)),
             cond_var: Condvar::new(),
         }
@@ -82,15 +80,11 @@ impl Semaphore {
     pub fn increment(&self) {
         let mut mutex_guard = self.mutex.lock().unwrap();
         let State { counter, passes } = mutex_guard.deref_mut();
+        *counter += 1;
 
-        if *counter < 0 {
-            *counter += 1;
+        if *counter <= 0 {
             *passes += 1;
             self.cond_var.notify_one();
-        } else if *counter == self.size as i16 {
-            // do nothing
-        } else {
-            *counter += 1;
         }
     }
 }

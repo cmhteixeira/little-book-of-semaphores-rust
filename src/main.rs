@@ -15,7 +15,7 @@ use little_book_semaphores_rust::semaphore_fixed::{Semaphore as SemaphoreFixed};
 use little_book_semaphores_rust::Semaphore;
 
 fn main() {
-    let s = Arc::new(SemaphoreFixed3::new(2));
+    let s = Arc::new(SemaphoreFixed2::new(2));
     let s1 = Arc::clone(&s);
     let s2 = Arc::clone(&s);
     let s3 = Arc::clone(&s);
