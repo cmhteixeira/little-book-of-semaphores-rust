@@ -1,6 +1,11 @@
 use std::sync::{Mutex, Condvar};
 use std::ops::{DerefMut, Deref};
 
+/// This is the original solution I came up with.
+///
+/// I don't remember why I thought there wa a need for the extra boolean. It doesn't seem
+/// to be needed.
+///
 pub struct Semaphore {
     mutex: Mutex<(u8, bool)>,
     condvar: Condvar
