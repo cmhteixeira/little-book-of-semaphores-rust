@@ -9,9 +9,8 @@ use std::time;
 use rand::Rng;
 
 use little_book_semaphores_rust::readers_writers::ReadersWritersLock;
-use little_book_semaphores_rust::semaphore_fixed_3::{Semaphore as SemaphoreFixed3};
-use little_book_semaphores_rust::semaphore_fixed_2::{Semaphore as SemaphoreFixed2};
-use little_book_semaphores_rust::semaphore_fixed::{Semaphore as SemaphoreFixed};
+use little_book_semaphores_rust::semaphore_3::{Semaphore as SemaphoreFixed3};
+use little_book_semaphores_rust::semaphore_2::{Semaphore as SemaphoreFixed2};
 use little_book_semaphores_rust::semaphore_simplest::{Semaphore as SemaphoreSimplest};
 use little_book_semaphores_rust::Semaphore;
 
