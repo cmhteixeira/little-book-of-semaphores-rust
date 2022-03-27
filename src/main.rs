@@ -15,13 +15,13 @@ use little_book_semaphores_rust::semaphore_simplest::{Semaphore as SemaphoreSimp
 use little_book_semaphores_rust::Semaphore;
 
 fn main() {
-    let s = Arc::new(SemaphoreSimplest::new(2));
+    let s = Arc::new(SemaphoreFixed3::new(2));
     let s1 = Arc::clone(&s);
     let s2 = Arc::clone(&s);
     let s3 = Arc::clone(&s);
     // s3.increment();
 
-    fn new_thread(s1: Arc<SemaphoreSimplest>, name: String, ttl_seconds: u64) -> JoinHandle<()> {
+    fn new_thread(s1: Arc<SemaphoreFixed3>, name: String, ttl_seconds: u64) -> JoinHandle<()> {
         thread::Builder::new().name(name.clone())
             .spawn(move || {
                 s1.decrement();

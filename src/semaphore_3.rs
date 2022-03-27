@@ -1,9 +1,16 @@
 use std::sync::{Mutex, Condvar};
 use std::ops::{Deref, DerefMut};
 
-/// This implementation is not 100% correct. It does not account for
+/// This implementation is not 100% correct. It does not account for spurious wakes.
 ///
-/// 1. Spurious wakes.
+/// Meaning of the counter:
+///
+/// 1. counter > 0: Number of threads that could enter the semaphore without blocking.
+/// 2. counter = 0: No new threads could enter the semaphore without blocking. However,
+/// there might be additional threads which are in process of waking up (and about to enter), but
+/// haven't yet done so.
+/// 3. counter < 0: Number of threads currently blocking, waiting to enter the semaphore.
+/// This does not account for threads which might be blocked, but in the process of being woken up.
 ///
 pub struct Semaphore {
     mutex: Mutex<i16>,
