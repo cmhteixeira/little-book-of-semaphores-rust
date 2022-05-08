@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicPtr, Ordering};
 use std::sync::Arc;
 use std::thread;
-use std::thread::JoinHandle;
+use std::thread::{JoinHandle, Thread};
 use std::time::{Duration, SystemTime};
 use std::time;
 use rand::Rng;
@@ -13,35 +13,47 @@ use little_book_semaphores_rust::semaphore_3::{Semaphore as SemaphoreFixed3};
 use little_book_semaphores_rust::semaphore_2::{Semaphore as SemaphoreFixed2};
 use little_book_semaphores_rust::semaphore_simplest::{Semaphore as SemaphoreSimplest};
 use little_book_semaphores_rust::Semaphore;
+use little_book_semaphores_rust::unisex_bathroom::Bathroom;
 
 fn main() {
-    let s = Arc::new(SemaphoreFixed3::new(2));
-    let s1 = Arc::clone(&s);
-    let s2 = Arc::clone(&s);
-    let s3 = Arc::clone(&s);
-    // s3.increment();
+    enum Person {
+        Man,
+        Woman,
+    }
 
-    fn new_thread(s1: Arc<SemaphoreFixed3>, name: String, ttl_seconds: u64) -> JoinHandle<()> {
+    let bathroom = Arc::new(Bathroom::new(5));
+    let bathroom_c1 = Arc::clone(&bathroom);
+    let bathroom_c2 = Arc::clone(&bathroom);
+    let bathroom_c3 = Arc::clone(&bathroom);
+    let bathroom_c4 = Arc::clone(&bathroom);
+
+    fn person(bathroom: Arc<Bathroom>, name: String, ttl_seconds: u64, type_person: Person) -> JoinHandle<()> {
         thread::Builder::new().name(name.clone())
             .spawn(move || {
-                s1.decrement();
-                let begin = SystemTime::now();
-                let mut elapsed = begin.elapsed().unwrap().as_secs();
-                while elapsed < ttl_seconds {
-                    thread::sleep(Duration::from_millis(500));
-                    if (elapsed % 5) == 0 {
-                        println!("Printing from '{}'", name)
+                match type_person {
+                    Person::Man => {
+                        bathroom.access_man(|_| {
+                            println!("Man {} entered", name);
+                            thread::sleep(Duration::from_millis(500));
+                            println!("Man {} exiting", name);
+                        })
                     }
-                    elapsed = begin.elapsed().unwrap().as_secs();
+                    Person::Woman => {
+                        bathroom.access_woman(|_| {
+                            println!("Woman {} entered", name);
+                            thread::sleep(Duration::from_millis(500));
+                            println!("Woman {} exiting", name);
+                        })
+                    }
                 }
-                s1.increment();
-                println!("Leaving thread '{}'", name)
             }).unwrap()
     }
 
-    let one = new_thread(s1, String::from("1"), 60);
-    let _ = new_thread(s2, String::from("2"), 10);
-    let _ = new_thread(s3, String::from("3"), 60);
+    let one = person(bathroom_c1, String::from("A"), 60, Person::Man);
+    let _ = person(bathroom_c2, String::from("B"), 60, Person::Man);
+    let _ = person(bathroom_c3, String::from("1"), 60, Person::Woman);
+    let _ = person(bathroom_c4, String::from("2"), 60, Person::Woman);
 
     one.join();
+    thread::sleep(Duration::from_secs(5));
 }

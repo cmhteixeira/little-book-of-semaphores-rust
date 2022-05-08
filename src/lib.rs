@@ -10,5 +10,6 @@ pub mod readers_writers;
 pub mod semaphore_2;
 pub mod semaphore_3;
 pub mod semaphore_simplest;
+pub mod unisex_bathroom;
 
 pub use semaphore::Semaphore as Semaphore;
