@@ -1,7 +1,7 @@
-use std::cell::RefMut;
+use std::cell::{RefMut, UnsafeCell};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicPtr, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::{JoinHandle, Thread};
 use std::time::{Duration, SystemTime};
@@ -15,45 +15,61 @@ use little_book_semaphores_rust::semaphore_simplest::{Semaphore as SemaphoreSimp
 use little_book_semaphores_rust::Semaphore;
 use little_book_semaphores_rust::unisex_bathroom::Bathroom;
 
-fn main() {
-    enum Person {
-        Man,
-        Woman,
+struct SharedState {
+    cell: UnsafeCell<u128>,
+}
+
+impl SharedState {
+    fn new() -> SharedState {
+        SharedState {
+            cell: UnsafeCell::new(0)
+        }
     }
+}
 
-    let bathroom = Arc::new(Bathroom::new(5));
-    let bathroom_c1 = Arc::clone(&bathroom);
-    let bathroom_c2 = Arc::clone(&bathroom);
-    let bathroom_c3 = Arc::clone(&bathroom);
-    let bathroom_c4 = Arc::clone(&bathroom);
+unsafe impl Sync for SharedState {}
 
-    fn person(bathroom: Arc<Bathroom>, name: String, ttl_seconds: u64, type_person: Person) -> JoinHandle<()> {
+fn main() {
+    let shared_state: Arc<SharedState> = Arc::new(SharedState::new());
+    let sem = Arc::new(SemaphoreSimplest::new(1));
+
+
+    fn create_thread(semaphore: Arc<SemaphoreSimplest>, shared_state: Arc<SharedState>, name: String, iterations: u32) -> JoinHandle<()> {
         thread::Builder::new().name(name.clone())
             .spawn(move || {
-                match type_person {
-                    Person::Man => {
-                        bathroom.access_man(|_| {
-                            println!("Man {} entered", name);
-                            thread::sleep(Duration::from_millis(500));
-                            println!("Man {} exiting", name);
-                        })
+                let mut local_counter: u128 = 1;
+
+                while local_counter <= iterations as u128 {
+                    semaphore.decrement();
+                    unsafe {
+                        let old = *shared_state.cell.get();
+                        let new = old + 1;
+                        *shared_state.cell.get() = new;
                     }
-                    Person::Woman => {
-                        bathroom.access_woman(|_| {
-                            println!("Woman {} entered", name);
-                            thread::sleep(Duration::from_millis(500));
-                            println!("Woman {} exiting", name);
-                        })
-                    }
+                    semaphore.increment();
+                    local_counter = local_counter + 1;
                 }
             }).unwrap()
     }
 
-    let one = person(bathroom_c1, String::from("A"), 60, Person::Man);
-    let _ = person(bathroom_c2, String::from("B"), 60, Person::Man);
-    let _ = person(bathroom_c3, String::from("1"), 60, Person::Woman);
-    let _ = person(bathroom_c4, String::from("2"), 60, Person::Woman);
+    let num_threads = 28;
+    let mut thread_handlers = vec![];
 
-    one.join();
-    thread::sleep(Duration::from_secs(5));
+    for i in 0..num_threads {
+        let shared_state_this = shared_state.clone();
+        let semaphore = sem.clone();
+        let thread_handle = create_thread(semaphore, shared_state_this, i.to_string(), 10000);
+        thread_handlers.push(thread_handle);
+    }
+
+    println!("Joining ...");
+    for handle in thread_handlers {
+        handle.join();
+    }
+    println!("Leaving ...");
+    let res: u128;
+    unsafe {
+        res = shared_state.cell.get().read();
+    }
+    println!("Result is {}", res)
 }

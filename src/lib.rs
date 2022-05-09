@@ -11,5 +11,6 @@ pub mod semaphore_2;
 pub mod semaphore_3;
 pub mod semaphore_simplest;
 pub mod unisex_bathroom;
+pub mod lightswitch;
 
 pub use semaphore::Semaphore as Semaphore;
