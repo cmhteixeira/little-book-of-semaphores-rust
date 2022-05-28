@@ -1,9 +1,9 @@
 use crate::Semaphore;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use std::thread;
 use std::thread::JoinHandle;
-use std::ops::{DerefMut, Deref};
-use std::cell::{RefCell, UnsafeCell};
+
+use std::cell::{UnsafeCell};
 use std::time::Duration;
 
 pub struct MyCustomMutex<A> {
@@ -41,7 +41,7 @@ pub fn monkey(num_threads: u8, the_ref: Arc<MyCustomMutex<Vec<u128>>>) -> Vec<Jo
             .spawn(move || {
                 loop {
                     thread::sleep(Duration::new(0, 1000));
-                    let mut lock_obtained = arc.lock();
+                    let lock_obtained = arc.lock();
                     if lock_obtained.len() >= 100 {
                         arc.unlock();
                         break;

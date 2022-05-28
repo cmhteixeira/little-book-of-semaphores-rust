@@ -1,7 +1,7 @@
 use crate::semaphore_simplest::Semaphore;
 use std::cell::UnsafeCell;
-use std::fmt::Debug;
-use std::sync::Mutex;
+
+
 
 pub struct Bathroom {
     women_counter: UnsafeCell<u16>,

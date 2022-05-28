@@ -1,8 +1,8 @@
 use crate::Semaphore;
 use std::cell::UnsafeCell;
-use std::borrow::Borrow;
-use std::sync::Mutex;
-use std::ops::DerefMut;
+
+
+
 
 pub struct BlockingOneElementQueue<A: Clone> {
     elem: UnsafeCell<A>,

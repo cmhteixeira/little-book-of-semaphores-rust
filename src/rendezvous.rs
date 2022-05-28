@@ -2,7 +2,7 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use crate::Semaphore;
 use std::thread::JoinHandle;
-use std::time::Duration;
+
 
 pub struct Output {
     pub thread_handles: (JoinHandle<()>, JoinHandle<()>),

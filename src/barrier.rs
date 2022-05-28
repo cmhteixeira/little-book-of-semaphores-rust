@@ -1,10 +1,10 @@
 use std::thread;
-use std::time::Duration;
+
 use std::thread::JoinHandle;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{Ordering};
 use crate::Semaphore;
 use std::sync::Arc;
-use std::alloc::System;
+
 
 
 pub fn barrier(num_threads: u8) -> Vec<JoinHandle<()>> {

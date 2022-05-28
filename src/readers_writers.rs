@@ -2,8 +2,8 @@ use std::cell::UnsafeCell;
 use crate::Semaphore;
 use std::sync::atomic;
 use std::sync::atomic::{AtomicU64, AtomicPtr, Ordering};
-use std::fmt::{Display, Debug};
-use rand::Rng;
+use std::fmt::{Debug};
+
 
 pub struct ReadersWritersLock<T: Debug> {
     elem: UnsafeCell<T>,
@@ -59,7 +59,7 @@ impl<T: Debug> ReadersWritersLock<T> {
         unsafe {
             let atomic_pointer = AtomicPtr::new(self.elem.get());
             let current_value = atomic_pointer.load(Ordering::SeqCst);
-            let mut new_value = write_op(&*current_value);
+            let new_value = write_op(&*current_value);
             *current_value = new_value;
             atomic_pointer.store(current_value, Ordering::SeqCst);
         }
